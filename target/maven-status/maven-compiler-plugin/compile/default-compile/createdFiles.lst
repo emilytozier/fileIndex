@@ -1,0 +1,15 @@
+ru\gildina\indexer\util\TextAnalyzer.class
+ru\gildina\indexer\model\FileIndexEntry.class
+ru\gildina\indexer\ApplicationContext.class
+ru\gildina\indexer\cli\CommandLineParser.class
+ru\gildina\indexer\service\SearchService.class
+ru\gildina\indexer\FileIndexerApp.class
+ru\gildina\indexer\util\PathUtils.class
+ru\gildina\indexer\database\ConnectSQLLite.class
+ru\gildina\indexer\database\DatabaseManager.class
+ru\gildina\indexer\service\FileWalker.class
+ru\gildina\indexer\util\DocxTextExtractor.class
+ru\gildina\indexer\util\FileUtils.class
+ru\gildina\indexer\util\PDFTextExtractor.class
+ru\gildina\indexer\service\SearchService$SearchType.class
+ru\gildina\indexer\service\FileWalker$1.class
