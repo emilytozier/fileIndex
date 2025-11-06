@@ -90,7 +90,7 @@ public class FileIndexEntry {
      * Метод для отладки - проверяет состояние объекта
      */
     public void debugInfo() {
-        System.out.println("🔍 FileIndexEntry Debug:");
+        System.out.println("FileIndexEntry Debug:");
         System.out.println("   File: " + fileName);
         System.out.println("   Path: " + path);
         System.out.println("   WordCounts reference: " + wordCounts);

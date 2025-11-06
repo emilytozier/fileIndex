@@ -116,7 +116,7 @@ public class DatabaseManager {
                     fileStmt.setString(5, entry.getExtension());
 
                     int affectedRows = fileStmt.executeUpdate();
-                    System.out.println("   ✅ " + entry.getFileName() + " - сохранен в files (" + affectedRows + " строк)");
+                    System.out.println("  " + entry.getFileName() + " - сохранен в files (" + affectedRows + " строк)");
 
                     // Получаем ID сразу после вставки
                     try (ResultSet rs = fileStmt.getGeneratedKeys()) {
@@ -149,7 +149,7 @@ public class DatabaseManager {
                     }
 
                     if (entry.getWordCounts() == null || entry.getWordCounts().isEmpty()) {
-                        System.out.println("   ⚠️ Пропускаем " + entry.getFileName() + " - нет слов");
+                        System.out.println("    Пропускаем " + entry.getFileName() + " - нет слов");
                         continue;
                     }
 
@@ -196,7 +196,7 @@ public class DatabaseManager {
 
             conn.commit();
 
-            System.out.println("════════════════════════════════════════");
+
             System.out.println("ПАКЕТНОЕ СОХРАНЕНИЕ ЗАВЕРШЕНО!");
             System.out.println(" Файлов обработано: " + entries.size());
             System.out.println(" Файлов со словами: " + filesWithWords);

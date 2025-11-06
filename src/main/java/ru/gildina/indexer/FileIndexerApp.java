@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.gildina.indexer.database.ConnectSQLLite;
 import ru.gildina.indexer.database.DatabaseManager;
 import ru.gildina.indexer.model.FileIndexEntry;
+import ru.gildina.indexer.monitor.MemoryMonitor;
 import ru.gildina.indexer.service.FileWalker;
 import ru.gildina.indexer.service.SearchService;
 import ru.gildina.indexer.util.PDFTextExtractor;
@@ -219,6 +220,15 @@ public class FileIndexerApp {
                 case "8":
                     testFileProcessing();
                     break;
+                case "9":
+                    MemoryMonitor.printHeapInfo();
+                    break;
+                case "10":
+                    MemoryMonitor.forceGC();
+                    break;
+                case "11":
+                    MemoryMonitor.printMemoryStats();
+                    break;
                 case "0":
                     System.out.println("Exit.");
                     return;
@@ -296,29 +306,29 @@ public class FileIndexerApp {
 
         // Проверяем существование файла в файловой системе
         File file = new File(originalInput);
-        System.out.println("\n📁 Проверка файловой системы:");
+        System.out.println("\nПроверка файловой системы:");
         if (file.exists()) {
-            System.out.println("✅ Файл существует в файловой системе");
+            System.out.println(" Файл существует в файловой системе");
             System.out.println("   Размер: " + formatFileSize(file.length()));
             System.out.println("   Последнее изменение: " + new java.util.Date(file.lastModified()));
             System.out.println("   Путь: " + file.getAbsolutePath());
             System.out.println("   Можно читать: " + file.canRead());
         } else {
-            System.out.println("❌ Файл не существует в файловой системе");
+            System.out.println(" Файл не существует в файловой системе");
             System.out.println("   Проверьте правильность пути и имя файла");
         }
 
         // Проверяем директорию
         File parentDir = file.getParentFile();
         if (parentDir != null && parentDir.exists()) {
-            System.out.println("✅ Директория существует: " + parentDir.getAbsolutePath());
+            System.out.println(" Директория существует: " + parentDir.getAbsolutePath());
 
         } else if (parentDir != null) {
-            System.out.println("❌ Директория не существует: " + parentDir.getAbsolutePath());
+            System.out.println(" Директория не существует: " + parentDir.getAbsolutePath());
         }
 
 
-        System.out.println("\n💡 Возможные решения:");
+        System.out.println("\n Возможные решения:");
         System.out.println("1. Проиндексируйте директорию заново (опция 1)");
         System.out.println("2. Проверьте, что файл имеет поддерживаемое расширение");
         System.out.println("3. Убедитесь, что файл не слишком большой (>50MB)");
@@ -377,7 +387,7 @@ public class FileIndexerApp {
             // Показываем нормализованный путь
             String normalizedPath = PathUtils.normalizePath(directory);
             if (!normalizedPath.equals(directory)) {
-                System.out.println("🔧 Нормализованный путь: " + normalizedPath);
+                System.out.println("Нормализованный путь: " + normalizedPath);
             }
 
             List<String> extensions = Arrays.asList(
@@ -390,7 +400,7 @@ public class FileIndexerApp {
             indexDirectory(directory, extensions);
 
         } catch (IllegalArgumentException e) {
-            System.out.println("❌ " + e.getMessage());
+            System.out.println("" + e.getMessage());
         }
     }
     private void printFileDetails(FileIndexEntry file) {
@@ -482,11 +492,14 @@ public class FileIndexerApp {
     private void indexDirectory(String directoryPath, List<String> extensions) {
         try {
             System.out.println("Начало индексации директории: " + directoryPath);
-
+            // Показываем состояние памяти до начала
+            MemoryMonitor.printHeapInfo();
             FileWalker fileWalker = new FileWalker(extensions);
             List<FileIndexEntry> entries = fileWalker.walkDirectory(directoryPath);
 
             System.out.println("Найдено файлов для индексации: " + entries.size());
+            // Показываем состояние памяти после обхода файлов
+            MemoryMonitor.printHeapInfo();
 
             if (entries.isEmpty()) {
                 System.out.println("Файлы не найдены!");
@@ -505,6 +518,9 @@ public class FileIndexerApp {
 
             // Используем пакетное сохранение
             databaseManager.saveFileEntriesBatch(entries);
+            // Показываем финальное состояние памяти
+            MemoryMonitor.printHeapInfo();
+            MemoryMonitor.printGCInfo();
 
             System.out.println("Индексация завершена! Сохранено файлов: " + entries.size());
 
@@ -555,46 +571,14 @@ public class FileIndexerApp {
             return String.format("%.1f ГБ", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
-    private void checkIfFileIsIndexed() {
-        System.out.print("Введите путь к файлу для проверки индексации: ");
-        Scanner scanner = new Scanner(System.in);
-        String filePath = scanner.nextLine().trim();
 
-        try {
-            // Нормализуем путь для поиска
-            String normalizedPath = filePath.replace('\\', '/');
-            System.out.println("Поиск по нормализованному пути: " + normalizedPath);
-
-            // Ищем по частичному совпадению через SearchService
-            List<FileIndexEntry> results = searchService.searchByPartialPath(normalizedPath);
-
-            if (results.isEmpty()) {
-                System.out.println(" Файл не найден в индексе: " + normalizedPath);
-                System.out.println("\nПроверьте:");
-                System.out.println("1. Что файл существует: " + new java.io.File(filePath).exists());
-                System.out.println("2. Что директория была проиндексирована");
-                System.out.println("3. Что файл имеет поддерживаемое расширение");
-
-                // Показываем что есть в индексе
-                showSomeIndexedFiles();
-            } else {
-                System.out.println("✅ Найдено файлов: " + results.size());
-                for (FileIndexEntry entry : results) {
-                    System.out.println("• " + entry.getPath() + " (размер: " + entry.getSize() + " байт)");
-                }
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ Ошибка при проверке: " + e.getMessage());
-        }
-    }
 
     private void showSomeIndexedFiles() {
         try {
             // Показываем несколько файлов из индекса для примера
             List<FileIndexEntry> someFiles = searchService.searchByFileNamePartial("");
             if (!someFiles.isEmpty()) {
-                System.out.println("\n📁 Примеры файлов в индексе:");
+                System.out.println("\n Примеры файлов в индексе:");
                 for (int i = 0; i < Math.min(someFiles.size(), 5); i++) {
                     FileIndexEntry entry = someFiles.get(i);
                     System.out.println("  " + entry.getFileName() + " -> " + entry.getPath());
@@ -689,12 +673,16 @@ public class FileIndexerApp {
         System.out.println("5. Статистика");
         System.out.println("6. Проверить БД");
         System.out.println("7. Описание файла");
+        System.out.println("8. Протестировать файл");
+        System.out.println("9. Мониторинг памяти");
+        System.out.println("10. Принудительный GC");
+        System.out.println("11. Детальная статистика памяти");
         System.out.println("0. Выход");
         System.out.print("Выберите действие: ");
     }
     private void debugFileEntries(List<FileIndexEntry> entries) {
         System.out.println("\n🔍 ДЕБАГ: Проверка объектов перед сохранением");
-        System.out.println("════════════════════════════════════════");
+
 
         for (int i = 0; i < entries.size(); i++) {
             FileIndexEntry entry = entries.get(i);

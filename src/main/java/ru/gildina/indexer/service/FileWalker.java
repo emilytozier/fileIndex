@@ -2,6 +2,7 @@ package ru.gildina.indexer.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.gildina.indexer.model.FileIndexEntry;
+import ru.gildina.indexer.monitor.MemoryMonitor;
 import ru.gildina.indexer.util.DocxTextExtractor;
 import ru.gildina.indexer.util.PDFTextExtractor;
 import ru.gildina.indexer.util.PathUtils;
@@ -80,7 +81,9 @@ public class FileWalker {
                         processedFiles.incrementAndGet();
 
                         if (processedFiles.get() % 10 == 0) {
-                            logger.info("Обработано файлов: {}/{}", processedFiles.get(), totalFiles.get());
+                            System.out.printf("Обработано: %d/%d файлов. ",
+                                    processedFiles.get(), totalFiles.get());
+                            MemoryMonitor.printHeapInfo();
                         }
                     } catch (Exception e) {
                         logger.error("Ошибка при обработке файла {}: {}", file, e.getMessage());
